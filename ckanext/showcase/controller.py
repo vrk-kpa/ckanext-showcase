@@ -9,7 +9,7 @@ import ckan.lib.helpers as h
 import ckan.lib.navl.dictization_functions as dict_fns
 import ckan.logic as logic
 import ckan.plugins as p
-from ckan.common import OrderedDict, g, ungettext
+from ckan.common import OrderedDict, ungettext
 from ckan.controllers.package import (PackageController,
                                       url_with_params,
                                       _encode_params)
@@ -31,7 +31,6 @@ tuplize_dict = logic.tuplize_dict
 clean_dict = logic.clean_dict
 parse_params = logic.parse_params
 NotAuthorized = tk.NotAuthorized
-
 
 log = logging.getLogger(__name__)
 
@@ -85,7 +84,7 @@ class ShowcaseController(PackageController):
         '''
 
         data_dict = clean_dict(dict_fns.unflatten(
-                tuplize_dict(parse_params(request.POST))))
+            tuplize_dict(parse_params(request.POST))))
 
         data_dict['type'] = package_type
         context['message'] = data_dict.get('log_message', '')
@@ -276,7 +275,7 @@ class ShowcaseController(PackageController):
 
         # Are we removing a showcase/dataset association?
         if (request.method == 'POST'
-                and 'bulk_action.showcase_remove' in request.params):
+            and 'bulk_action.showcase_remove' in request.params):
             # Find the datasets to perform the action on, they are prefixed by
             # dataset_ in the form data
             dataset_ids = []
@@ -301,7 +300,7 @@ class ShowcaseController(PackageController):
 
         # Are we creating a showcase/dataset association?
         elif (request.method == 'POST'
-                and 'bulk_action.showcase_add' in request.params):
+              and 'bulk_action.showcase_add' in request.params):
             # Find the datasets to perform the action on, they are prefixed by
             # dataset_ in the form data
             dataset_ids = []
@@ -314,8 +313,8 @@ class ShowcaseController(PackageController):
                     try:
                         get_action(
                             'ckanext_showcase_package_association_create')(
-                                context, {'showcase_id': c.pkg_dict['id'],
-                                          'package_id': dataset_id})
+                            context, {'showcase_id': c.pkg_dict['id'],
+                                      'package_id': dataset_id})
                     except ValidationError as e:
                         h.flash_notice(e.error_summary)
                     else:
@@ -425,7 +424,7 @@ class ShowcaseController(PackageController):
             fq = ''
             for (param, value) in request.params.items():
                 if param not in ['q', 'page', 'sort'] \
-                        and len(value) and not param.startswith('_'):
+                    and len(value) and not param.startswith('_'):
                     if not param.startswith('ext_'):
                         c.fields.append((param, value))
                         fq += ' %s:"%s"' % (param, value)
@@ -469,7 +468,15 @@ class ShowcaseController(PackageController):
                     'license_id': _('Licenses'),
                     }
 
-            for facet in h.facets():
+            # for CKAN-Versions that do not provide the facets-method from
+            # helper-context, import facets from ckan.common
+            if hasattr(h, 'facets'):
+                current_facets = h.facets()
+            else:
+                from ckan.common import g
+                current_facets = g.facets
+
+            for facet in current_facets:
                 if facet in default_facet_titles:
                     facets[facet] = default_facet_titles[facet]
                 else:
@@ -517,8 +524,8 @@ class ShowcaseController(PackageController):
                                                int(config.get('search.facets.default', 10))))
             except ValueError:
                 abort(400, _("Parameter '{parameter_name}' is not an integer").format(
-                                 parameter_name='_%s_limit' % facet
-                             ))
+                    parameter_name='_%s_limit' % facet
+                ))
             c.search_facets_limits[facet] = limit
 
     def manage_showcase_admins(self):
