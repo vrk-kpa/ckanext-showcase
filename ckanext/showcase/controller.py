@@ -275,7 +275,7 @@ class ShowcaseController(PackageController):
 
         # Are we removing a showcase/dataset association?
         if (request.method == 'POST'
-            and 'bulk_action.showcase_remove' in request.params):
+                and 'bulk_action.showcase_remove' in request.params):
             # Find the datasets to perform the action on, they are prefixed by
             # dataset_ in the form data
             dataset_ids = []
@@ -424,7 +424,7 @@ class ShowcaseController(PackageController):
             fq = ''
             for (param, value) in request.params.items():
                 if param not in ['q', 'page', 'sort'] \
-                    and len(value) and not param.startswith('_'):
+                        and len(value) and not param.startswith('_'):
                     if not param.startswith('ext_'):
                         c.fields.append((param, value))
                         fq += ' %s:"%s"' % (param, value)
@@ -461,12 +461,12 @@ class ShowcaseController(PackageController):
             facets = OrderedDict()
 
             default_facet_titles = {
-                    'organization': _('Organizations'),
-                    'groups': _('Groups'),
-                    'tags': _('Tags'),
-                    'res_format': _('Formats'),
-                    'license_id': _('Licenses'),
-                    }
+                'organization': _('Organizations'),
+                'groups': _('Groups'),
+                'tags': _('Tags'),
+                'res_format': _('Formats'),
+                'license_id': _('Licenses'),
+            }
 
             # for CKAN-Versions that do not provide the facets-method from
             # helper-context, import facets from ckan.common
