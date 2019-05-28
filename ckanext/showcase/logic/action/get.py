@@ -53,19 +53,18 @@ def showcase_list(context, data_dict):
 @toolkit.side_effect_free
 def showcase_package_list(context, data_dict):
     '''List packages associated with a showcase.
+    
+    The context variable is passed forward as a copy to avoid unexpected side effects
 
-    :param showcase_id: id or name of the showcase
-    :type showcase_id: string
-
-    :rtype: list of dictionaries
+    :rtype: list of package dictionaries
     '''
 
-    toolkit.check_access('ckanext_showcase_package_list', context, data_dict)
+    toolkit.check_access('ckanext_showcase_package_list', context.copy(), data_dict)
 
     # validate the incoming data_dict
     validated_data_dict, errors = validate(data_dict,
                                            showcase_package_list_schema(),
-                                           context)
+                                           context.copy())
 
     if errors:
         raise toolkit.ValidationError(errors)
@@ -80,7 +79,7 @@ def showcase_package_list(context, data_dict):
         # active
         for pkg_id in pkg_id_list:
             try:
-                pkg = toolkit.get_action('package_show')(context,
+                pkg = toolkit.get_action('package_show')(context.copy(),
                                                          {'id': pkg_id})
                 if pkg['state'] == 'active':
                     pkg_list.append(pkg)
