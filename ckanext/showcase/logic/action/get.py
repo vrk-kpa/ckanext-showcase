@@ -53,7 +53,7 @@ def showcase_list(context, data_dict):
 @toolkit.side_effect_free
 def showcase_package_list(context, data_dict):
     '''List packages associated with a showcase.
-    
+
     The context variable is passed forward as a copy to avoid unexpected side effects
 
     :rtype: list of package dictionaries
