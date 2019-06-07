@@ -556,9 +556,7 @@ class ShowcaseController(PackageController):
             else:
                 h.flash_success(_("The user is now a Showcase Admin"))
 
-            return redirect(h.url_for(
-                controller='ckanext.showcase.controller:ShowcaseController',
-                action='manage_showcase_admins'))
+            return redirect(h.url_for('ckanext_showcase_admins'))
 
         c.showcase_admins = get_action('ckanext_showcase_admin_list')()
 
