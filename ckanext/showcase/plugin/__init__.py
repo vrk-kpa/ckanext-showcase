@@ -4,16 +4,18 @@ import os
 import sys
 import json
 import logging
-from collections import OrderedDict
 
 from six import string_types
 
 import ckan.plugins as plugins
 import ckan.lib.plugins as lib_plugins
 import ckan.lib.helpers as h
+from ckan.plugins import toolkit as tk
+try:
+    from ckan.common import OrderedDict
+except ImportError:
+    from collections import OrderedDict
 from ckan import model as ckan_model
-
-import ckantoolkit as tk
 
 
 import ckanext.showcase.utils as utils
