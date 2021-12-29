@@ -489,7 +489,11 @@ def _add_dataset_search(showcase_id, showcase_name):
 
 
 def _search_url(params, name):
-    url = h.url_for('showcase_manage_datasets', id=name)
+    if tk.check_ckan_version(min_version='2.9.0'):
+        manage_route = 'showcase_blueprint.manage_datasets'
+    else:
+        manage_route = 'showcase_manage_datasets'
+    url = h.url_for(manage_route, id=name)
     return url_with_params(url, params)
 
 
