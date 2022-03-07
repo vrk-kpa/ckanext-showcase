@@ -220,7 +220,7 @@ class TestShowcaseList(object):
         assert sorted(showcase_list_name_id) == sorted(
             [
                 (showcase["name"], showcase["id"])
-                for showcase in [showcase_one, showcase_two, showcase_three,]
+                for showcase in [showcase_one, showcase_two, showcase_three]
             ]
         )
 

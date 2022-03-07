@@ -1,6 +1,4 @@
 import logging
-import json
-
 
 from ckan.plugins import toolkit as tk
 import ckan.lib.helpers as h

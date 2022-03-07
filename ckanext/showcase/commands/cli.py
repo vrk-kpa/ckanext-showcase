@@ -16,8 +16,9 @@ def showcase():
 
 @showcase.command()
 @click.option('--allow-duplicates',
-                default=False,
-                help='Allow related items with duplicate titles to be migrated. Duplicate showcases will be created as "duplicate_<related-name>_<related-id>".')
+              default=False,
+              help='Allow related items with duplicate titles to be migrated. '
+                   'Duplicate showcases will be created as "duplicate_<related-name>_<related-id>".')
 def migrate(allow_duplicates):
     """
         showcase migrate [options]

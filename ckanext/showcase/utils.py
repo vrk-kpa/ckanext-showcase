@@ -128,7 +128,7 @@ def manage_datasets_view(id):
         manage_route = 'showcase_blueprint.manage_datasets'
     else:
         manage_route = 'showcase_manage_datasets'
-    
+
     if (tk.request.method == 'POST'
             and 'bulk_action.showcase_remove' in form_data):
         # Find the datasets to perform the action on, they are prefixed by
@@ -714,6 +714,7 @@ def remove_showcase_admin():
     c.user_dict = tk.get_action('user_show')(data_dict={'id': user_id})
     c.user_id = user_id
     return tk.render('admin/confirm_remove_showcase_admin.html')
+
 
 def markdown_to_html():
     ''' Migrates the notes of all showcases from markdown to html.

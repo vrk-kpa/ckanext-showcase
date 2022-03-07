@@ -5,9 +5,11 @@ from ckan.plugins import toolkit
 
 from ckanext.showcase.model import setup as model_setup
 
+
 @pytest.fixture
 def showcase_setup():
     model_setup()
+
 
 @pytest.fixture
 def clean_session():
