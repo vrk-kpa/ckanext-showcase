@@ -1,5 +1,3 @@
-import sqlalchemy
-
 import ckan.plugins.toolkit as toolkit
 import ckan.lib.dictization.model_dictize as model_dictize
 from ckan.lib.navl.dictization_functions import validate
@@ -10,9 +8,6 @@ from ckanext.showcase.model import ShowcasePackageAssociation, ShowcaseAdmin
 
 import logging
 log = logging.getLogger(__name__)
-
-_select = sqlalchemy.sql.select
-_and_ = sqlalchemy.and_
 
 
 @toolkit.side_effect_free
@@ -79,7 +74,7 @@ def showcase_package_list(context, data_dict):
         id_list = []
         for pkg_id in pkg_id_list:
             id_list.append(pkg_id[0])
-        q = ' OR '.join(['id:{0}'.format(x) for x in id_list])
+        q = 'id:(' + ' OR '.join(['{0}'.format(x) for x in id_list]) + ')'
         _pkg_list = toolkit.get_action('package_search')(
             context,
             {'q': q, 'rows': 100})
@@ -119,7 +114,7 @@ def package_showcase_list(context, data_dict):
         for showcase_id in showcase_id_list:
             id_list.append(showcase_id[0])
         fq = 'dataset_type:showcase'
-        q = ' OR '.join(['id:{0}'.format(x) for x in id_list])
+        q = 'id:(' + ' OR '.join(['{0}'.format(x) for x in id_list]) + ')'
         _showcase_list = toolkit.get_action('package_search')(
             context,
             {'q': q, 'fq': fq, 'rows': 100})
