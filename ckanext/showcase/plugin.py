@@ -2,35 +2,22 @@
 
 import os
 import sys
-import json
 import logging
-
-from six import string_types
+from collections import OrderedDict
 
 import ckan.plugins as plugins
+import ckan.plugins.toolkit as tk
 import ckan.lib.plugins as lib_plugins
 import ckan.lib.helpers as h
-from ckan.plugins import toolkit as tk
-try:
-    from ckan.common import OrderedDict
-except ImportError:
-    from collections import OrderedDict
-from ckan import model as ckan_model
-
-
-import ckanext.showcase.utils as utils
+from ckan.lib.munge import munge_title_to_name
+from ckanext.showcase import cli
+from ckanext.showcase import utils
+from ckanext.showcase import views
 from ckanext.showcase.logic import auth, action
 
 import ckanext.showcase.logic.schema as showcase_schema
 import ckanext.showcase.logic.helpers as showcase_helpers
-from ckanext.showcase.model import setup as model_setup
 
-if tk.check_ckan_version(u'2.9'):
-    from ckanext.showcase.plugin.flask_plugin import MixinPlugin
-else:
-    from ckanext.showcase.plugin.pylons_plugin import MixinPlugin
-
-c = tk.c
 _ = tk._
 
 log = logging.getLogger(__name__)
@@ -38,9 +25,7 @@ log = logging.getLogger(__name__)
 DATASET_TYPE_NAME = utils.DATASET_TYPE_NAME
 
 
-class ShowcasePlugin(
-        MixinPlugin, plugins.SingletonPlugin, lib_plugins.DefaultDatasetForm):
-    plugins.implements(plugins.IConfigurable)
+class ShowcasePlugin(plugins.SingletonPlugin, lib_plugins.DefaultDatasetForm):
     plugins.implements(plugins.IConfigurer)
     plugins.implements(plugins.IDatasetForm)
     plugins.implements(plugins.IFacets, inherit=True)
@@ -48,47 +33,26 @@ class ShowcasePlugin(
     plugins.implements(plugins.IActions)
     plugins.implements(plugins.IPackageController, inherit=True)
     plugins.implements(plugins.ITemplateHelpers)
+    plugins.implements(plugins.ITranslation)
+    plugins.implements(plugins.IBlueprint)
+    plugins.implements(plugins.IClick)
 
-    # ITranslation only available in 2.5+
-    try:
-        plugins.implements(plugins.ITranslation)
-    except AttributeError:
-        pass
+    # IBlueprint
+
+    def get_blueprint(self):
+        return views.get_blueprints()
+
+    # IClick
+
+    def get_commands(self):
+        return cli.get_commands()
 
     # IConfigurer
 
     def update_config(self, config):
-        tk.add_template_directory(config, '../templates')
-        tk.add_public_directory(config, '../public')
-        tk.add_resource('../fanstatic', 'showcase')
-        if tk.check_ckan_version(min_version='2.4', max_version='2.9.0'):
-            tk.add_ckan_admin_tab(config, 'showcase_admins',
-                                  'Showcase Config')
-        elif tk.check_ckan_version(min_version='2.9.0'):
-            tk.add_ckan_admin_tab(config, 'showcase_blueprint.admins',
-                                  'Showcase Config')
-
-        if tk.check_ckan_version(min_version='2.9.0'):
-            mappings = config.get('ckan.legacy_route_mappings', {})
-            if isinstance(mappings, string_types):
-                mappings = json.loads(mappings)
-
-            bp_routes = [
-                'index', 'new', 'delete',
-                'read', 'edit', 'manage_datasets',
-                'dataset_showcase_list', 'admins', 'admin_remove'
-            ]
-            mappings.update({
-                'showcase_' + route: 'showcase_blueprint.' + route
-                for route in bp_routes
-            })
-            # https://github.com/ckan/ckan/pull/4521
-            config['ckan.legacy_route_mappings'] = json.dumps(mappings)
-
-    # IConfigurable
-
-    def configure(self, config):
-        model_setup()
+        tk.add_template_directory(config, 'templates')
+        tk.add_public_directory(config, 'public')
+        tk.add_resource('assets', 'showcase')
 
     # IDatasetForm
 
@@ -128,7 +92,7 @@ class ShowcasePlugin(
         return {
             'facet_remove_field': showcase_helpers.facet_remove_field,
             'get_site_statistics': showcase_helpers.get_site_statistics,
-            'get_wysiwyg_editor': showcase_helpers.get_wysiwyg_editor,
+            'showcase_get_wysiwyg_editor': showcase_helpers.showcase_get_wysiwyg_editor,
         }
 
     # IFacets
@@ -152,9 +116,7 @@ class ShowcasePlugin(
     # IPackageController
 
     def _add_to_pkg_dict(self, context, pkg_dict):
-        '''
-        Add key/values to pkg_dict and return it.
-        '''
+        '''Add key/values to pkg_dict and return it.'''
 
         if pkg_dict['type'] != 'showcase':
             return pkg_dict
@@ -162,46 +124,41 @@ class ShowcasePlugin(
         # Add a display url for the Showcase image to the pkg dict so template
         # has access to it.
         image_url = pkg_dict.get('image_url')
-        pkg_dict[u'image_display_url'] = image_url
+        pkg_dict['image_display_url'] = image_url
         if image_url and not image_url.startswith('http'):
-            pkg_dict[u'image_url'] = image_url
-            pkg_dict[u'image_display_url'] = \
+            pkg_dict['image_url'] = image_url
+            pkg_dict['image_display_url'] = \
                 h.url_for_static('uploads/{0}/{1}'
                                  .format(DATASET_TYPE_NAME,
                                          pkg_dict.get('image_url')),
                                  qualified=True)
 
         # Add dataset count
-        pkg_dict[u'num_datasets'] = len(
+        pkg_dict['num_datasets'] = len(
             tk.get_action('ckanext_showcase_package_list')(
                 context, {'showcase_id': pkg_dict['id']}))
 
         # Rendered notes
-        if showcase_helpers.get_wysiwyg_editor() == 'ckeditor':
-            pkg_dict[u'showcase_notes_formatted'] = pkg_dict['notes']
+        if showcase_helpers.showcase_get_wysiwyg_editor() == 'ckeditor':
+            pkg_dict['showcase_notes_formatted'] = pkg_dict['notes']
         else:
-            pkg_dict[u'showcase_notes_formatted'] = \
+            pkg_dict['showcase_notes_formatted'] = \
                 h.render_markdown(pkg_dict['notes'])
 
         return pkg_dict
 
-    def after_show(self, context, pkg_dict):
-        '''
-        Modify package_show pkg_dict.
-        '''
+    # CKAN >= 2.10
+    def after_dataset_show(self, context, pkg_dict):
+        '''Modify package_show pkg_dict.'''
         pkg_dict = self._add_to_pkg_dict(context, pkg_dict)
 
-    def before_view(self, pkg_dict):
-        '''
-        Modify pkg_dict that is sent to templates.
-        '''
-
-        context = {'model': ckan_model, 'session': ckan_model.Session,
-                   'user': c.user or c.author}
+    def before_dataset_view(self, pkg_dict):
+        '''Modify pkg_dict that is sent to templates.'''
+        context = {'user': tk.g.user or tk.g.author}
 
         return self._add_to_pkg_dict(context, pkg_dict)
 
-    def before_search(self, search_params):
+    def before_dataset_search(self, search_params):
         '''
         Unless the query is already being filtered by this dataset_type
         (either positively, or negatively), exclude datasets of type
@@ -213,12 +170,38 @@ class ShowcasePlugin(
             search_params.update({'fq': fq + " -" + filter})
         return search_params
 
+    def before_dataset_index(self, pkg_dict):
+        '''Modify pkg_dict that is sent to Solr for indexing.'''
+        if pkg_dict['type'] != DATASET_TYPE_NAME:
+            return pkg_dict
+
+        title_string = pkg_dict.get('title_string', '')
+        pkg_dict['title_string'] = munge_title_to_name(title_string)
+
+        return pkg_dict
+
+    # CKAN < 2.10 (Remove when dropping support for 2.9)
+    def after_show(self, context, pkg_dict):
+        '''Modify package_show pkg_dict.'''
+        pkg_dict = self.after_dataset_show(context, pkg_dict)
+
+    def before_view(self, pkg_dict):
+        '''Modify pkg_dict that is sent to templates.'''
+        return self.before_dataset_view(pkg_dict)
+
+    def before_search(self, search_params):
+        '''
+        Unless the query is already being filtered by this dataset_type
+        (either positively, or negatively), exclude datasets of type
+        `showcase`.
+        '''
+        return self.before_dataset_search(search_params)
+
+    def before_index(self, pkg_dict):
+        '''Modify pkg_dict that is sent to Solr for indexing.'''
+        return self.before_dataset_index(pkg_dict)
+
     # ITranslation
-
-    # The following methods copied from ckan.lib.plugins.DefaultTranslation so
-    # we don't have to mix it into the class. This means we can use Showcase
-    # even if ITranslation isn't available (less than 2.5).
-
     def i18n_directory(self):
         '''Change the directory of the *.mo translation files
 

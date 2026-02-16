@@ -22,7 +22,7 @@ def _get_request(app, url, status):
         app.get(url, status=status)
 
 
-@pytest.mark.usefixtures("clean_db", "clean_index")
+@pytest.mark.usefixtures("with_plugins", "clean_db", "clean_index")
 class TestShowcaseAuthIndex(object):
     def test_auth_anon_user_can_view_showcase_index(self, app):
         """An anon (not logged in) user can view the Showcases index."""
@@ -88,7 +88,7 @@ class TestShowcaseAuthIndex(object):
         assert "/showcase/new" in response.body
 
 
-@pytest.mark.usefixtures("clean_db", "clean_index")
+@pytest.mark.usefixtures("with_plugins", "clean_db", "clean_index")
 class TestShowcaseAuthDetails(object):
     def test_auth_anon_user_can_view_showcase_details(self, app):
         """
@@ -216,13 +216,17 @@ class TestShowcaseAuthDetails(object):
         assert json_response["success"]
 
 
-@pytest.mark.usefixtures("clean_db", "clean_index")
+@pytest.mark.usefixtures("with_plugins", "clean_db", "clean_index")
 class TestShowcaseAuthCreate(object):
     def test_auth_anon_user_cant_view_create_showcase(self, app):
         """
         An anon (not logged in) user can't access the create showcase page.
         """
-        _get_request(app, "/showcase/new", status=302)
+        if toolkit.check_ckan_version(min_version='2.10.0'):
+            _get_request(app, "/showcase/new", status=401)
+        else:
+            # Remove when dropping support for 2.9
+            _get_request(app, "/showcase/new", status=302)
 
     def test_auth_logged_in_user_cant_view_create_showcase_page(self, app):
         """
@@ -247,7 +251,7 @@ class TestShowcaseAuthCreate(object):
         )
 
 
-@pytest.mark.usefixtures("clean_db", "clean_index")
+@pytest.mark.usefixtures("with_plugins", "clean_db", "clean_index")
 class TestShowcaseAuthList(object):
     def test_auth_showcase_list_anon_can_access(self, app):
         """
@@ -299,16 +303,18 @@ class TestShowcaseAuthList(object):
         assert json_response["success"]
 
 
-@pytest.mark.usefixtures("clean_db", "clean_index")
+@pytest.mark.usefixtures("with_plugins", "clean_db", "clean_index")
 class TestShowcaseAuthEdit(object):
     def test_auth_anon_user_cant_view_edit_showcase_page(self, app):
         """
         An anon (not logged in) user can't access the showcase edit page.
         """
-
         factories.Dataset(type="showcase", name="my-showcase")
-
-        _get_request(app, "/showcase/edit/my-showcase", status=302)
+        if toolkit.check_ckan_version(min_version='2.10.0'):
+            _get_request(app, "/showcase/edit/my-showcase", status=401)
+        else:
+            # Remove when dropping support for 2.9
+            _get_request(app, "/showcase/edit/my-showcase", status=302)
 
     def test_auth_logged_in_user_cant_view_edit_showcase_page(self, app):
         """
@@ -366,8 +372,11 @@ class TestShowcaseAuthEdit(object):
         """
 
         factories.Dataset(type="showcase", name="my-showcase")
-
-        _get_request(app, "/showcase/manage_datasets/my-showcase", status=302)
+        if toolkit.check_ckan_version(min_version='2.10.0'):
+            _get_request(app, "/showcase/manage_datasets/my-showcase", status=401)
+        else:
+            # Remove when dropping support for 2.9
+            _get_request(app, "/showcase/manage_datasets/my-showcase", status=302)
 
     def test_auth_logged_in_user_cant_view_manage_datasets(self, app):
         """
@@ -425,8 +434,11 @@ class TestShowcaseAuthEdit(object):
         """
 
         factories.Dataset(type="showcase", name="my-showcase")
-
-        _get_request(app, "/showcase/delete/my-showcase", status=302)
+        if toolkit.check_ckan_version(min_version='2.10.0'):
+            _get_request(app, "/showcase/delete/my-showcase", status=401)
+        else:
+            # Remove when dropping support for 2.9
+            _get_request(app, "/showcase/delete/my-showcase", status=302)
 
     def test_auth_logged_in_user_cant_view_delete_showcase_page(self, app):
         """
@@ -562,7 +574,7 @@ class TestShowcaseAuthEdit(object):
         assert "showcase-add" in showcase_list_response.body
 
 
-@pytest.mark.usefixtures("clean_db", "clean_index")
+@pytest.mark.usefixtures("with_plugins", "clean_db", "clean_index")
 class TestShowcasePackageAssociationCreate(object):
     def test_showcase_package_association_create_no_user(self):
         """
@@ -619,7 +631,7 @@ class TestShowcasePackageAssociationCreate(object):
             )
 
 
-@pytest.mark.usefixtures("clean_db", "clean_index")
+@pytest.mark.usefixtures("with_plugins", "clean_db", "clean_index")
 class TestShowcasePackageAssociationDelete(object):
     def test_showcase_package_association_delete_no_user(self):
         """
@@ -676,7 +688,7 @@ class TestShowcasePackageAssociationDelete(object):
             )
 
 
-@pytest.mark.usefixtures("clean_db", "clean_index")
+@pytest.mark.usefixtures("with_plugins", "clean_db", "clean_index")
 class TestShowcaseAdminAddAuth(object):
     def test_showcase_admin_add_no_user(self):
         """
@@ -711,7 +723,7 @@ class TestShowcaseAdminAddAuth(object):
             )
 
 
-@pytest.mark.usefixtures("clean_db", "clean_index")
+@pytest.mark.usefixtures("with_plugins", "clean_db", "clean_index")
 class TestShowcaseAdminRemoveAuth(object):
     def test_showcase_admin_remove_no_user(self):
         """
@@ -746,7 +758,7 @@ class TestShowcaseAdminRemoveAuth(object):
             )
 
 
-@pytest.mark.usefixtures("clean_db", "clean_index")
+@pytest.mark.usefixtures("with_plugins", "clean_db", "clean_index")
 class TestShowcaseAdminListAuth(object):
     def test_showcase_admin_list_no_user(self):
         """
@@ -781,15 +793,18 @@ class TestShowcaseAdminListAuth(object):
             )
 
 
-@pytest.mark.usefixtures("clean_db", "clean_index")
+@pytest.mark.usefixtures("with_plugins", "clean_db", "clean_index")
 class TestShowcaseAuthManageShowcaseAdmins(object):
     def test_auth_anon_user_cant_view_showcase_admin_manage_page(self, app):
         """
         An anon (not logged in) user can't access the manage showcase admin
         page.
         """
-
-        _get_request(app, "/showcase/new", status=302)
+        if toolkit.check_ckan_version(min_version='2.10.0'):
+            _get_request(app, "/showcase/new", status=401)
+        else:
+            # Remove when dropping support for 2.9
+            _get_request(app, "/showcase/new", status=302)
 
     def test_auth_logged_in_user_cant_view_showcase_admin_manage_page(
         self, app
