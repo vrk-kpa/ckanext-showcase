@@ -3,6 +3,7 @@
 import os
 import sys
 import logging
+from collections import OrderedDict
 
 import ckan.plugins as plugins
 import ckan.plugins.toolkit as tk
